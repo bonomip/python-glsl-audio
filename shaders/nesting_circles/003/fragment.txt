@@ -1,0 +1,169 @@
+#version 330 core
+
+out vec4 FragColor;
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+//shader toy remapping variables
+#define iTime u_time
+
+float random(float f) { return fract(sin(f*(91.3458)) * 47453.5453); }
+
+
+/*
+    Perlin Noise function
+*/
+
+vec2 random2(vec2 st){
+    st = vec2( dot(st,vec2(127.1,311.7)),
+              dot(st,vec2(269.5,183.3)) );
+    return -1.0 + 2.0*fract(sin(st)*43758.5453123);
+}
+
+vec2 rotate(vec2 uv, float th) {
+    return mat2(cos(th), sin(th), -sin(th), cos(th)) * uv;
+}
+
+// Value Noise by Inigo Quilez - iq/2013
+// https://www.shadertoy.com/view/lsf3WH
+float noise(vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    vec2 u = f*f*(3.0-2.0*f);
+
+    return mix( mix( dot( random2(i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
+                     dot( random2(i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
+                mix( dot( random2(i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
+                     dot( random2(i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
+}
+
+void main(void)
+{    
+    vec3 iResolution = vec3(u_resolution.x, u_resolution.y, 0.0);
+    vec2 fragCoord = gl_FragCoord.xy;
+    vec4 fragColor;
+    
+    /*
+    *
+    *
+    *   Copy and paste shadertoy code down here
+    *
+    *                  ___
+    *                  | |
+    *                  | |
+    *               ___| |___
+    *               \       /
+    *                \     /
+    *                 \   /
+    *                  \ /
+    *                   '
+    *
+    */
+
+    vec2 uv = (fragCoord * 2.0 - iResolution.xy) / iResolution.y;
+    
+    vec3 col = vec3(0.0, 0.0, 0.0);
+    //float frq = 0.0; // ???? find freq of white pulses
+   
+    
+    for(float i = 0.; i < 0.8; i += 0.2){
+    
+        float d = 0.;
+        vec2 r;
+        if(i == 0.){ 
+        
+            float n = noise(uv+(iTime)/2.)*.07;
+        
+            //most inner cicrcle
+            d = length(uv+n);
+            d -= 0.11;
+            d = abs(d);
+            d = smoothstep(.005, 0.1, d);
+            d = .001 / d;
+            col += d;
+        
+            //rotating line
+            float dir = sin((iTime)/8.)/1.2;
+            r = rotate(uv, 2.0*mod(iTime, 360.)*dir);
+            vec2 v = uv + vec2(r.y, r.x);
+            d = length(v);
+            d = abs(d);
+            d = smoothstep(.005, 0.1, d);
+            d = .01 / d;
+            col += d;
+            
+            //white dot in the middle
+            d = length(uv);
+            d -= 0.03;
+            //d = abs(d);
+            d = smoothstep(.005, 0.1, d);
+            d = .005 / d;
+            col += d;
+            
+            //flash light
+            dir = sin((iTime)/8.)/1.2;
+            r = rotate(uv, 2.0*mod(iTime+180., 360.)*dir);
+            v = uv + vec2(r.x, r.y);
+            d = length(v);
+            d = abs(d);
+            d = smoothstep(.005, 0.1, d);
+            d = .01 / d;
+            col += d;
+            
+            
+        } else {
+            float n = noise(uv+(iTime+random(i*10.)*100.)/2.)*.1;
+            r = rotate(uv, -1.0*iTime);
+            d = length(r+n);
+            d -= i;
+            d -= 0.1;
+            d = abs(d);
+            d = smoothstep(.005, 0.1, d);
+            d = .001 / d;
+            col += d;
+        }
+    }
+    
+        for(float i = 0.1; i < 0.8; i += 0.2){
+    
+        float d = 0.;
+        if(i == 0.1){
+            d = length(uv);
+        } else {
+            //vec2 r = rotate(uv, iTime);
+            d = length(uv);
+        }
+
+        d -= i;
+        d -= 0.1;
+        d = abs(d);
+        d = smoothstep(.005, 0.1, d);
+        d = .001 / d;
+
+        col += d;
+ 
+    }
+
+    fragColor = vec4(col, 1.0);
+
+    /*  
+    *
+    *                   .
+    *                  / \
+    *                 /   \
+    *                /     \
+    *               /__   __\
+    *                  | |
+    *                  | |
+    *                  |_|      
+    *
+    */
+
+    FragColor = fragColor;
+}
